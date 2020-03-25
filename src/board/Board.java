@@ -26,8 +26,13 @@ public class Board {
      */
     private byte[] _layout;
     private BoardInfo _info;
-    static String[] unicodeChess = new String[] {"\u2654", "\u2655", "\u2656", "\u2657", "\u2658", "\u2659", " ",
+    private static String[] unicodeChess = new String[] {"\u2654", "\u2655", "\u2656", "\u2657", "\u2658", "\u2659", " ",
             "\u265F", "\u265E", "\u265D", "\u265C", "\u265B", "\u265A"};
+
+    private int _whiteKingIsInCheck = 0;
+    private int _blackKingIsInCheck = 0;
+    private int _whiteCanMove = 0;
+    private int _blackCanMove = 0;
 
 
     public Board() {
@@ -119,6 +124,13 @@ public class Board {
     }
 
     public boolean kingIsInCheck(boolean whiteKing) {
+        if (whiteKing && _whiteKingIsInCheck != 0) {
+            return (_whiteKingIsInCheck > 0);
+        }
+        if (!whiteKing && _blackKingIsInCheck != 0) {
+            return (_blackKingIsInCheck > 0);
+        }
+
         // Get the position of the king:
         int kingPos = -1;
         for (int i = 0; i < 64; i++) {
@@ -132,11 +144,19 @@ public class Board {
 
         for (Move m : moves) {
             if (m.getEnd() == kingPos) {
+                if (whiteKing) {
+                    _whiteKingIsInCheck = 1;
+                } else {
+                    _blackKingIsInCheck = 1;
+                }
                 return true;
             }
         }
-
-        return false;
+        if (whiteKing) {
+            _whiteKingIsInCheck = -1;
+        } else {
+            _blackKingIsInCheck = -1;
+        }        return false;
     }
 
     public int getPoints() {
@@ -164,7 +184,7 @@ public class Board {
             } else if (x == 3) {
                 output[x] = 5;
                 output[56 + x] = -5;
-            } else if (x == 4) {
+            } else { /* x == 4 */
                 output[x] = 6;
                 output[56 + x] = -6;
             }
@@ -182,18 +202,27 @@ public class Board {
     }
 
     public boolean playerCannotMove(boolean isWhite) {
-        return getAllLegalMoves(isWhite, null).size() == 0;
+        if (isWhite && _whiteCanMove != 0) return _whiteCanMove < 0;
+        if (!isWhite && _blackCanMove != 0) return _blackCanMove < 0;
+
+        boolean output = getAllLegalMoves(isWhite, null).size() == 0;
+        if (isWhite) {
+            _whiteCanMove = output ? -1 : 1;
+        } else {
+            _blackCanMove = output ? -1 : 1;
+        }
+        return output;
     }
 
     public String toString() {
-        String out = "";
+        StringBuilder out = new StringBuilder();
         for (int i = 7; i >= 0; i--) {
             for (int j = 0; j < 8; j++) {
-                out += unicodeChess[_layout[8*i + j] + 6] + " ";
+                out.append(unicodeChess[_layout[8 * i + j] + 6]).append(j == 7 ? "" : " ");
             }
-            out += "\n";
+            out.append(i == 7 ? "" : "\n");
         }
-        return out;
+        return out.toString();
     }
 
     private List<Move> getPawnMoves(int pos, PawnPromotionChooser chooser) {
@@ -250,7 +279,7 @@ public class Board {
             output.add(new PawnPromotionMove(from, to, (byte) 3));
             output.add(new PawnPromotionMove(from, to, (byte) 4));
             output.add(new PawnPromotionMove(from, to, (byte) 5));
-            output.add(new PawnPromotionMove(from, to, chooser));
+            if (chooser != null) output.add(new PawnPromotionMove(from, to, chooser));
         }
 
         return output;
@@ -309,5 +338,9 @@ public class Board {
         }
 
         return output;
+    }
+
+    public int pieceId(byte piece) {
+        return _layout[piece];
     }
 }

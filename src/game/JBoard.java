@@ -19,6 +19,8 @@ public class JBoard extends JPanel implements ChessSpotListener {
     private JGridSpot[] _spots;
     private int _selected;
 
+    private boolean _whiteIsBottom;
+
     private boolean promptingUser;
     private boolean[] spotsMovable = new boolean[64];
     private boolean[][] spotsMovableInto = new boolean[64][64];
@@ -35,7 +37,9 @@ public class JBoard extends JPanel implements ChessSpotListener {
 
 
 
-    public JBoard() {
+    public JBoard(boolean whiteIsBottom) {
+        _whiteIsBottom = whiteIsBottom;
+
         _selected = -1;
 
         _spots = new JGridSpot[64];
@@ -43,14 +47,17 @@ public class JBoard extends JPanel implements ChessSpotListener {
         for (int i = 0; i < _spots.length; i++) {
             _spots[i] = new JGridSpot(i);
             _spots[i].setPiece(0);
-            _spots[i].setSize(new Dimension(75, 75));
             _spots[i].addChessSpotListener(this);
         }
 
         // Add components to the grid:
         for (int y = 7; y >= 0; y--) {
             for (int x = 0; x < 8; x++) {
-                add(_spots[8*y + x]);
+                if (whiteIsBottom) {
+                    add(_spots[8 * y + x]);
+                } else {
+                    add(_spots[8 * (7-y) + (7-x)]);
+                }
             }
         }
     }
@@ -58,6 +65,17 @@ public class JBoard extends JPanel implements ChessSpotListener {
     public void setSpots(byte[] spots) {
         for (int i = 0; i < spots.length; i++) {
             _spots[i].setPiece(spots[i]);
+        }
+    }
+
+    public void setSpots(byte[] spots, Move move) {
+        for (int i = 0; i < spots.length; i++) {
+            _spots[i].setPiece(spots[i]);
+            if (i == move.getStart() || i == move.getEnd()) {
+                _spots[i].makeBackGroundPartOfMove();
+            } else {
+                _spots[i].undoBackGroundPartOfMove();
+            }
         }
     }
 
@@ -71,7 +89,7 @@ public class JBoard extends JPanel implements ChessSpotListener {
         spotsMovable = new boolean[64];
         spotsMovableInto = new boolean[64][64];
         for (Move m : allPossibleChoices) {
-//            if (m.isBotPawnPromotion()) continue;
+            if (m.isBotPawnPromotion()) continue;
             spotsMovable[m.getStart()] = true;
             spotsMovableInto[m.getStart()][m.getEnd()] = true;
             moves[m.getStart()][m.getEnd()] = m;
@@ -132,4 +150,5 @@ public class JBoard extends JPanel implements ChessSpotListener {
             _spots[spot].unhighlight();
         }
     }
+
 }

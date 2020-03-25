@@ -8,15 +8,21 @@ import java.util.Comparator;
 import java.util.List;
 
 public class MoveGenerator {
+    private static int TIMEOUT_RETURNVAL = 123456789;
+
     public Move getBestMove(Board board, boolean isWhite) {
         List<Move> allMoves = board.getAllLegalMoves(isWhite, null);
         List<MoveScoreUpdater> updaters = new ArrayList<>();
         List<Thread> threads = new ArrayList<>();
         int[] allScores = new int[allMoves.size()];
+        int[] depths = new int[allMoves.size()];
         for (int i = 0; i < allMoves.size(); i++) {
             if (allMoves.get(i).isUserPawnPromotion()) continue;
             int index = i;
-            MoveScoreUpdater updater = newScore -> allScores[index] = newScore;
+            MoveScoreUpdater updater = (newScore, depth) -> {
+                allScores[index] = newScore;
+                depths[index] = depth;
+            };
             updaters.add(updater);
             Thread thread = calculateMoveScore(3900, board.applyMove(allMoves.get(i)), !isWhite, updater);
             threads.add(thread);
@@ -54,30 +60,29 @@ public class MoveGenerator {
         }
         int random = (int) (Math.random() * bestMoves.size());
         System.out.println("Returning random of " + bestMoves.size() + " moves: " + bestMoves.get(random) +
-                " , score " + allScores[allMoves.indexOf(bestMoves.get(random))] + " (index " + allMoves.indexOf(bestMoves.get(random)) + ")");
-        for (int i = 0; i < allScores.length; i++) {
-            System.out.print(allScores[i] + " ");
+                " , score " + allScores[allMoves.indexOf(bestMoves.get(random))] + " (index "
+                + allMoves.indexOf(bestMoves.get(random)) + ", depth " + depths[allMoves.indexOf(bestMoves.get(random))] + ")");
+        for (int allScore : allScores) {
+            System.out.print(allScore + " ");
         }
         System.out.println();
         return bestMoves.get(random);
     }
 
-    public Thread calculateMoveScore(long timeMilis, Board board, boolean isNowWhitesTurn, MoveScoreUpdater updater) {
-        Thread thread = new Thread(() -> {
+    private Thread calculateMoveScore(long timeMilis, Board board, boolean isNowWhiteTurn, MoveScoreUpdater updater) {
+        return new Thread(() -> {
             long timeStart = System.currentTimeMillis();
             int depth = 0;
             while (System.currentTimeMillis() < timeStart + timeMilis) {
                 depth++;
-                int score = minimax(board, depth, -1000000, 1000000, isNowWhitesTurn, timeStart + timeMilis + 500);
-                updater.updateScore(score);
+                int score = minimax(board, depth, -1000000, 1000000, isNowWhiteTurn, timeStart + timeMilis + 500);
+                if (score != TIMEOUT_RETURNVAL) updater.updateScore(score, depth+1);
             }
-            updater.updateScore(board.getPoints());
         });
-        return thread;
     }
 
-    public int minimax(Board board, int depth, int alpha, int beta, boolean maximizing, long timeWhenMustQuit) {
-        if (System.currentTimeMillis() > timeWhenMustQuit) return 0;
+    private int minimax(Board board, int depth, int alpha, int beta, boolean maximizing, long timeWhenMustQuit) {
+        if (System.currentTimeMillis() > timeWhenMustQuit) return TIMEOUT_RETURNVAL;
 
         if (depth == 0) {
             return board.getPoints();
@@ -91,41 +96,38 @@ public class MoveGenerator {
         }
 
         List<Move> moves = board.getAllLegalMoves(maximizing, null);
-        List<Board> children = new ArrayList<Board>();
+        List<Board> children = new ArrayList<>();
         for (Move m : moves) {
             if (!m.isUserPawnPromotion()) {
                 children.add(board.applyMove(m));
             }
         }
 
-        children.sort(new Comparator<Board>() {
-            @Override
-            public int compare(Board board, Board t1) {
-                int points1 = board.getPoints();
-                int points2 = t1.getPoints();
-                return (points1 < points2) ? 1 : (points1 == points2) ? 0 : -1;
-            }
+        children.sort((board1, t1) -> {
+            int points1 = board1.getPoints();
+            int points2 = t1.getPoints();
+            return Integer.compare(points2, points1);
         });
 
         if (maximizing) {
             int maxEval = -1000000;
-            for (int i = 0; i < children.size(); i++) {
-                int eval = minimax(children.get(i), depth-1, alpha, beta, false, timeWhenMustQuit);
-                if (eval > 50000) eval--;
-                if (System.currentTimeMillis() > timeWhenMustQuit) return 0;
-                maxEval = (maxEval > eval ? maxEval : eval);
-                alpha = (alpha > eval ? alpha : eval);
+            for (Board child : children) {
+                int eval = minimax(child, /* board.pieceId((byte) moves.get(i).getEnd()) < 0 ? depth : */ depth - 1, alpha, beta, false, timeWhenMustQuit);
+                if (System.currentTimeMillis() > timeWhenMustQuit) return TIMEOUT_RETURNVAL;
+                eval = (int) (0.97 * eval);
+                maxEval = Math.max(maxEval, eval);
+                alpha = Math.max(alpha, eval);
                 if (beta <= alpha) break;
             }
             return maxEval;
         } else {
             int minEval = 1000000;
             for (int i = children.size()-1; i >= 0; i--) {
-                int eval = minimax(children.get(i), depth-1, alpha, beta, true, timeWhenMustQuit);
-                if (eval < -50000) eval++;
-                if (System.currentTimeMillis() > timeWhenMustQuit) return 0;
-                minEval = (minEval < eval ? minEval : eval);
-                beta = (beta < eval ? beta : eval);
+                int eval = minimax(children.get(i), /* board.pieceId((byte) moves.get(i).getEnd()) > 0 ? depth : */ depth-1, alpha, beta, true, timeWhenMustQuit);
+                if (System.currentTimeMillis() > timeWhenMustQuit) return TIMEOUT_RETURNVAL;
+                eval = (int) (0.97*eval + 1);
+                minEval = Math.min(minEval, eval);
+                beta = Math.min(beta, eval);
                 if (beta <= alpha) break;
             }
             return minEval;
@@ -135,5 +137,5 @@ public class MoveGenerator {
 }
 
 interface MoveScoreUpdater {
-    void updateScore(int newScore);
+    void updateScore(int newScore, int depth);
 }

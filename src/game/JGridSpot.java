@@ -7,8 +7,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
@@ -24,16 +23,21 @@ import javax.swing.text.html.ImageView;
 
 public class JGridSpot extends JPanel implements MouseListener {
 
-    final public static Color SELECTABLE_COLOR = new Color(143/255f, 188/255f, 143/255f);
-    final public static Color SELECTED_COLOR   = new Color(143/255f, 188/255f, 143/255f);
-    final public static Color MOVEABLE_COLOR   = new Color(143/255f, 188/255f, 143/255f);
-    final public static Color LIGHT_BG         = new Color(240/255f, 217/255f, 181/255f);
-    final public static Color DARK_BG          = new Color(181/255f, 136/255f, 99/255f);
+    final private static Color SELECTABLE_COLOR   = new Color(143/255f, 188/255f, 143/255f);
+    final private static Color SELECTED_COLOR     = new Color(143/255f, 188/255f, 143/255f);
+    final private static Color MOVEABLE_COLOR     = new Color(143/255f, 188/255f, 143/255f);
+    final private static Color LIGHT_BG           = new Color(240/255f, 217/255f, 181/255f);
+    final private static Color DARK_BG            = new Color(181/255f, 136/255f, 99/255f);
+    final private static Color PART_OF_MOVE_DARK  = new Color(170/255f, 162/255f, 58/255f);
+    final private static Color PART_OF_MOVE_LIGHT = new Color(205/255f, 210/255f, 106/255f);
 
-    final public static String[] ID_TO_NAME = new String[] {"", "Pawn", "Knight", "Bishop", "Rook", "Queen", "King"};
+    final private static int SIZE = 80;
+
+    final private static String[] ID_TO_NAME = new String[] {"", "Pawn", "Knight", "Bishop", "Rook", "Queen", "King"};
 
     private int _position;
-    private Color _backGroundColor, _highLightColor;
+    private Color _backGroundColor, _moveBackGroundColor;
+    private boolean _useMoveBackGround;
     private Color _active_highlight;
     private int _piece;
     private JLabel _icon;
@@ -42,14 +46,14 @@ public class JGridSpot extends JPanel implements MouseListener {
 
     public JGridSpot(int position) {
         _backGroundColor = (position%2 + (position/8)%2 == 1) ? LIGHT_BG : DARK_BG;
-        _highLightColor = MOVEABLE_COLOR;
+        _moveBackGroundColor = (position%2 + (position/8)%2 == 1) ? PART_OF_MOVE_LIGHT : PART_OF_MOVE_DARK;
         _position = position;
         setBackground(_backGroundColor);
 
         // For handling the images
         setLayout(new BorderLayout());
         _icon = new JLabel();
-        setPreferredSize(new Dimension(70,70));
+        setPreferredSize(new Dimension(SIZE,SIZE));
         add(_icon, BorderLayout.CENTER);
 
         addMouseListener(this);
@@ -76,7 +80,7 @@ public class JGridSpot extends JPanel implements MouseListener {
 
     public void unhighlight() {
         _active_highlight = null;
-        setBackground(_backGroundColor);
+        setBackground(_useMoveBackGround ? _moveBackGroundColor : _backGroundColor);
         trigger_update();
     }
 
@@ -89,19 +93,22 @@ public class JGridSpot extends JPanel implements MouseListener {
 
         _piece = piece;
         ImageIcon imgIcon;
+
         if (_piece != 0) {
-            imgIcon = new ImageIcon("img/" + (piece > 0 ? "White" : "Black") + ID_TO_NAME[(piece > 0 ? piece : 0 - piece)] + ".svg");
+            imgIcon = new ImageIcon("img/" + (piece > 0 ? "White" : "Black") + ID_TO_NAME[(piece > 0 ? piece : 0 - piece)] + ".png");
         } else {
             imgIcon = new ImageIcon("img/Transparent.png");
         }
-        BufferedImage bi = new BufferedImage(70, 70, BufferedImage.TYPE_INT_ARGB);
+
+        BufferedImage bi = new BufferedImage(SIZE, SIZE, BufferedImage.TRANSLUCENT);
 
         Graphics2D bGr = bi.createGraphics();
-        bGr.drawImage(imgIcon.getImage(), 0, 0, null);
+        bGr.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        bGr.drawImage(imgIcon.getImage(), 0, 0, SIZE, SIZE, null);
         bGr.dispose();
 
         _icon.setIcon(new ImageIcon(bi));
-
+        _icon.setPreferredSize(new Dimension(SIZE, SIZE));
         _icon.setHorizontalAlignment(SwingConstants.CENTER);
         _icon.setVerticalAlignment(SwingConstants.CENTER);
 
@@ -123,14 +130,11 @@ public class JGridSpot extends JPanel implements MouseListener {
     private void trigger_update() {
         repaint();
 
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {}
-                repaint();
-            }
-
+        new Thread(() -> {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ignored) {}
+            repaint();
         }).start();
 
     }
@@ -143,23 +147,32 @@ public class JGridSpot extends JPanel implements MouseListener {
         _listeners.remove(c);
     }
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
-
+    public void makeBackGroundPartOfMove() {
+        if (_useMoveBackGround) return;
+        setBackground(_moveBackGroundColor);
+        _useMoveBackGround = true;
+        trigger_update();
     }
+
+    public void undoBackGroundPartOfMove() {
+        if (!_useMoveBackGround) return;
+        setBackground(_backGroundColor);
+        _useMoveBackGround = false;
+        trigger_update();
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {}
 
     @Override
     public void mousePressed(MouseEvent e) {
         for (ChessSpotListener c : _listeners) {
             c.spotClicked(_position);
         }
-
     }
 
     @Override
-    public void mouseReleased(MouseEvent e) {
-
-    }
+    public void mouseReleased(MouseEvent e) {}
 
     @Override
     public void mouseEntered(MouseEvent e) {

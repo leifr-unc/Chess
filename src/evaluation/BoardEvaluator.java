@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 public class BoardEvaluator {
-    public static int[][] piecePoints;
+    private static int[][] piecePoints;
 
     // Fill in piecepoints:
     static {
@@ -29,11 +29,15 @@ public class BoardEvaluator {
 
         Scanner scan = new Scanner(file);
         int[][] output = new int[13][64];
-        for (int i = 0; i < output.length; i++) {
+        for (int i = 0; i < 6; i++) {
             for (int j = 0; j < output[i].length; j++) {
-                output[i][j] = scan.nextInt();
+                int nextInt = scan.nextInt();
+                output[i][j] = -1 * nextInt;
+                System.out.println(j + ", " + (8*((63-j)/8) + j%8));
+                output[12-i][8*((63-j)/8) + j%8] = nextInt;
             }
         }
+
         return output;
     }
 }

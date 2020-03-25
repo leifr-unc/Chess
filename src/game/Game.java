@@ -15,22 +15,21 @@ import javax.swing.*;
 import java.awt.*;
 
 public class Game implements Runnable {
-    JBoard _view;
-    Board _model;
-    Player _white, _black;
+    private JBoard _view;
+    private Board _model;
+    private Player _white, _black;
 
-    public Game(JBoard view) {
-        this(view, new Board());
+    public Game(JBoard view, boolean whiteIsBot, boolean blackIsBot) {
+        this(view, new Board(), whiteIsBot, blackIsBot);
     }
 
-    public Game(JBoard view, Board model) {
+    private Game(JBoard view, Board model, boolean whiteIsBot, boolean blackIsBot) {
         _view = view;
         _model = model;
-        _black = new AIPlayer(false, this);
-        _white = new HumanPlayer(true, this);
+        _white = whiteIsBot ? new AIPlayer(true, this) : new HumanPlayer(true, this);
+        _black = blackIsBot ? new AIPlayer(false, this) : new HumanPlayer(false, this);
 
         _view.setSpots(_model.getLayout());
-        _view.setPreferredSize(new Dimension(560, 560));
     }
 
     public void start() {
@@ -55,7 +54,7 @@ public class Game implements Runnable {
             System.out.println(move);
 
             _model = _model.applyMove(move);
-            _view.setSpots(_model.getLayout());
+            _view.setSpots(_model.getLayout(), move);
             isWhiteTurn = !isWhiteTurn;
         }
 
