@@ -31,10 +31,6 @@ public class JGridSpot extends JPanel implements MouseListener {
     final private static Color PART_OF_MOVE_DARK  = new Color(170/255f, 162/255f, 58/255f);
     final private static Color PART_OF_MOVE_LIGHT = new Color(205/255f, 210/255f, 106/255f);
 
-    final private static int SIZE = 80;
-
-    final private static String[] ID_TO_NAME = new String[] {"", "Pawn", "Knight", "Bishop", "Rook", "Queen", "King"};
-
     private int _position;
     private Color _backGroundColor, _moveBackGroundColor;
     private boolean _useMoveBackGround;
@@ -53,7 +49,6 @@ public class JGridSpot extends JPanel implements MouseListener {
         // For handling the images
         setLayout(new BorderLayout());
         _icon = new JLabel();
-        setPreferredSize(new Dimension(SIZE,SIZE));
         add(_icon, BorderLayout.CENTER);
 
         addMouseListener(this);
@@ -88,27 +83,12 @@ public class JGridSpot extends JPanel implements MouseListener {
         return _piece;
     }
 
-    public void setPiece(int piece) {
+    public void setPiece(int piece, ImageIcon imageIcon) {
         if (_piece == piece) return;
 
         _piece = piece;
-        ImageIcon imgIcon;
 
-        if (_piece != 0) {
-            imgIcon = new ImageIcon("img/" + (piece > 0 ? "White" : "Black") + ID_TO_NAME[(piece > 0 ? piece : 0 - piece)] + ".png");
-        } else {
-            imgIcon = new ImageIcon("img/Transparent.png");
-        }
-
-        BufferedImage bi = new BufferedImage(SIZE, SIZE, BufferedImage.TRANSLUCENT);
-
-        Graphics2D bGr = bi.createGraphics();
-        bGr.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        bGr.drawImage(imgIcon.getImage(), 0, 0, SIZE, SIZE, null);
-        bGr.dispose();
-
-        _icon.setIcon(new ImageIcon(bi));
-        _icon.setPreferredSize(new Dimension(SIZE, SIZE));
+        _icon.setIcon(imageIcon);
         _icon.setHorizontalAlignment(SwingConstants.CENTER);
         _icon.setVerticalAlignment(SwingConstants.CENTER);
 

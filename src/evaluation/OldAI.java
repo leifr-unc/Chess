@@ -7,10 +7,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class MoveGenerator {
+public class OldAI {
     private static int TIMEOUT_RETURNVAL = 123456789;
 
-    public Move getBestMove(Board board, boolean isWhite) {
+    public Move getBestMove(Board board, boolean isWhite, long maxTime) {
         List<Move> allMoves = board.getAllLegalMoves(isWhite, null);
         List<MoveScoreUpdater> updaters = new ArrayList<>();
         List<Thread> threads = new ArrayList<>();
@@ -24,7 +24,7 @@ public class MoveGenerator {
                 depths[index] = depth;
             };
             updaters.add(updater);
-            Thread thread = calculateMoveScore(3900, board.applyMove(allMoves.get(i)), !isWhite, updater);
+            Thread thread = calculateMoveScore(maxTime, board.applyMove(allMoves.get(i)), !isWhite, updater);
             threads.add(thread);
         }
 
@@ -33,7 +33,7 @@ public class MoveGenerator {
         }
 
         try {
-            Thread.sleep(4000);
+            Thread.sleep(maxTime);
         } catch (InterruptedException ignored) {}
 
         // Now, the threads are all finished, or are finishing.

@@ -1,10 +1,14 @@
 package board;
 
 import evaluation.BoardEvaluator;
+import game.Game;
 import moves.*;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 /*
  * Board class:
@@ -24,6 +28,8 @@ public class Board {
      * king: 6
      * black is negative, white is positive
      */
+    private static BoardEvaluator evaluator = new BoardEvaluator();
+
     private byte[] _layout;
     private BoardInfo _info;
     private static String[] unicodeChess = new String[] {"\u2654", "\u2655", "\u2656", "\u2657", "\u2658", "\u2659", " ",
@@ -35,8 +41,8 @@ public class Board {
     private int _blackCanMove = 0;
 
 
-    public Board() {
-        this(startLayout());
+    public Board(Game.Type type) {
+        this(startLayout(type));
     }
 
     public Board(byte[] layout) {
@@ -160,36 +166,29 @@ public class Board {
     }
 
     public int getPoints() {
-        return BoardEvaluator.getPoints(_layout);
+        return evaluator.getPoints(_layout);
     }
 
-    private static byte[] startLayout() {
+    private static byte[] startLayout(Game.Type type) {
+        String address = type == Game.Type.CHESS ? "data/chessStart.txt." :
+                         type == Game.Type.SLAUGHTER_CHESS ? "data/slaughterChessStart.txt" :
+                         type == Game.Type.HORDE ? "data/hordeStart.txt" : null;
+        File layoutFile = new File(address);
+        Scanner layoutScanner;
+        try {
+            layoutScanner = new Scanner(layoutFile);
+        } catch (FileNotFoundException e) {
+            System.out.println("file could not be found: " + address);
+            return null;
+        }
         byte[] output = new byte[64];
 
         // Loop runs for each x position, filling in the board.
-        for (int x = 0; x < 8; x++) {
-            output[8 + x] = 1; // White pawns
-            output[48 + x] = -1; // Black pawns
-
-            // All other stuff.pieces:
-            if (x == 0 || x == 7) {
-                output[x] = 4;
-                output[56 + x] = -4;
-            } else if (x == 1 || x == 6) {
-                output[x] = 2;
-                output[56 + x] = -2;
-            } else if (x == 2 || x == 5) {
-                output[x] = 3;
-                output[56 + x] = -3;
-            } else if (x == 3) {
-                output[x] = 5;
-                output[56 + x] = -5;
-            } else { /* x == 4 */
-                output[x] = 6;
-                output[56 + x] = -6;
+        for (int y = 7; y >= 0; y--) {
+            for (int x = 0; x < 8; x++) {
+                output[8*y + x] = layoutScanner.nextByte();
             }
         }
-
         return output;
     }
 
@@ -243,7 +242,7 @@ public class Board {
             moves.addAll(getMoveAndPromotion(pos, isWhite ? pos+8 : pos-8, isPromotion, chooser));
         }
 
-        if (spaceInFront && spaceDoubleInFront && (isWhite ? (pos/8 == 1) : (pos/8 == 6))) {
+        if (spaceInFront && spaceDoubleInFront && (isWhite ? (pos/8 <= 1) : (pos/8 >= 6))) {
             moves.add(new NormalMove(pos, isWhite ? pos+16 : pos-16));
         }
 

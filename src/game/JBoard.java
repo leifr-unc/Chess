@@ -5,6 +5,7 @@ import moves.PawnPromotionChooser;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.List;
 
 /*
@@ -27,6 +28,12 @@ public class JBoard extends JPanel implements ChessSpotListener {
     private Move[][] moves = new Move[64][64];
     private Move userChosenMove;
 
+    final private static int SIZE = 80; // Pixel width of each square of the board.
+
+    private ImageIcon[] _imageIcons;
+    final private static String[] ID_TO_NAME = new String[] {"", "Pawn", "Knight", "Bishop", "Rook", "Queen", "King"};
+
+
     private PawnPromotionChooser pawnChooser = () -> {
         String[] options = new String[] {"Queen", "Rook", "Bishop", "Knight"};
         int response = JOptionPane.showOptionDialog(null, "Choose new Piece", "Pawn Promotion",
@@ -42,12 +49,15 @@ public class JBoard extends JPanel implements ChessSpotListener {
 
         _selected = -1;
 
+        fillImageIcons();
+
         _spots = new JGridSpot[64];
         setLayout(new GridLayout(8, 8));
         for (int i = 0; i < _spots.length; i++) {
             _spots[i] = new JGridSpot(i);
-            _spots[i].setPiece(0);
+            _spots[i].setPiece(0, _imageIcons[6]);
             _spots[i].addChessSpotListener(this);
+            _spots[i].setPreferredSize(new Dimension(SIZE, SIZE));
         }
 
         // Add components to the grid:
@@ -64,13 +74,13 @@ public class JBoard extends JPanel implements ChessSpotListener {
 
     public void setSpots(byte[] spots) {
         for (int i = 0; i < spots.length; i++) {
-            _spots[i].setPiece(spots[i]);
+            _spots[i].setPiece(spots[i], _imageIcons[spots[i] + 6]);
         }
     }
 
     public void setSpots(byte[] spots, Move move) {
         for (int i = 0; i < spots.length; i++) {
-            _spots[i].setPiece(spots[i]);
+            _spots[i].setPiece(spots[i], _imageIcons[spots[i] + 6]);
             if (i == move.getStart() || i == move.getEnd()) {
                 _spots[i].makeBackGroundPartOfMove();
             } else {
@@ -98,7 +108,7 @@ public class JBoard extends JPanel implements ChessSpotListener {
         // Wait for user to input a move
         while (promptingUser && userChosenMove == null) {
             try {
-                Thread.sleep(50);
+                Thread.sleep(25);
             } catch (InterruptedException ignored) {}
         }
         Move output = userChosenMove;
@@ -151,4 +161,23 @@ public class JBoard extends JPanel implements ChessSpotListener {
         }
     }
 
+    private void fillImageIcons() {
+        _imageIcons = new ImageIcon[13];
+        for (int i = -6; i < 7; i++) {
+            ImageIcon imgIcon;
+            if (i != 0) {
+                imgIcon = new ImageIcon("img/" + (i > 0 ? "White" : "Black") + ID_TO_NAME[(i > 0 ? i : 0 - i)] + ".png");
+            } else {
+                imgIcon = new ImageIcon("img/Transparent.png");
+            }
+
+            BufferedImage bi = new BufferedImage(SIZE, SIZE, BufferedImage.TRANSLUCENT);
+
+            Graphics2D bGr = bi.createGraphics();
+            bGr.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            bGr.drawImage(imgIcon.getImage(), 0, 0, SIZE, SIZE, null);
+            bGr.dispose();
+            _imageIcons[i+6] = new ImageIcon(bi);
+        }
+    }
 }

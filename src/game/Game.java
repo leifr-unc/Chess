@@ -18,9 +18,12 @@ public class Game implements Runnable {
     private JBoard _view;
     private Board _model;
     private Player _white, _black;
+    public enum Type {CHESS, SLAUGHTER_CHESS, HORDE}
 
-    public Game(JBoard view, boolean whiteIsBot, boolean blackIsBot) {
-        this(view, new Board(), whiteIsBot, blackIsBot);
+    private static final long timeForAI = 5000;
+
+    public Game(JBoard view, boolean whiteIsBot, boolean blackIsBot, Type type) {
+        this(view, new Board(type), whiteIsBot, blackIsBot);
     }
 
     private Game(JBoard view, Board model, boolean whiteIsBot, boolean blackIsBot) {
@@ -28,6 +31,8 @@ public class Game implements Runnable {
         _model = model;
         _white = whiteIsBot ? new AIPlayer(true, this) : new HumanPlayer(true, this);
         _black = blackIsBot ? new AIPlayer(false, this) : new HumanPlayer(false, this);
+//        _white = new AIPlayer(true, this);
+//        _black = new AIPlayer(false, this);
 
         _view.setSpots(_model.getLayout());
     }
@@ -76,5 +81,9 @@ public class Game implements Runnable {
         try {
             Thread.sleep(milis);
         } catch (InterruptedException ignored) {}
+    }
+
+    public long getAIMaxTime() {
+        return timeForAI;
     }
 }
