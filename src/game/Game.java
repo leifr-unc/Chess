@@ -9,15 +9,17 @@ package game;
  */
 
 import board.Board;
-import moves.Move;
+import evaluation.AI;
+import moves.MoveUtils;
 
-import javax.swing.*;
-import java.awt.*;
+import java.util.Stack;
 
 public class Game implements Runnable {
     private JBoard _view;
     private Board _model;
     private Player _white, _black;
+    private Stack<Long> _moves;
+    private boolean _endgame;
     public enum Type {CHESS, SLAUGHTER_CHESS, HORDE}
 
     private static final long timeForAI = 5000;
@@ -27,12 +29,16 @@ public class Game implements Runnable {
     }
 
     private Game(JBoard view, Board model, boolean whiteIsBot, boolean blackIsBot) {
+        System.out.println(new Board(Type.CHESS));
         _view = view;
         _model = model;
+        _moves = new Stack<>();
         _white = whiteIsBot ? new AIPlayer(true, this) : new HumanPlayer(true, this);
         _black = blackIsBot ? new AIPlayer(false, this) : new HumanPlayer(false, this);
 //        _white = new AIPlayer(true, this);
 //        _black = new AIPlayer(false, this);
+//        _white = new HumanPlayer(true, this);
+//        _black = new HumanPlayer(false, this);
 
         _view.setSpots(_model.getLayout());
     }
@@ -42,25 +48,30 @@ public class Game implements Runnable {
         gameThread.start();
     }
 
-    public Move askUserForMove(boolean isWhite) {
-        return _view.askUserForMove(_model.getAllLegalMoves(isWhite, _view.getPawnChooser()));
+    public long askUserForMove(long[] options) {
+        return _view.askUserForMove(options);
     }
 
     @Override
     public void run() {
         // This is where the functionality of switching back and forth between players happens.
         _view.setSpots(_model.getLayout());
+
         boolean isWhiteTurn = true;
-        while(!_model.playerCannotMove(isWhiteTurn)) {
-            System.out.println((isWhiteTurn ? "White" : "Black") + " to move");
+        while(true) {
             Player turn = (isWhiteTurn ? _white : _black);
+            long[] moveOptions = _model.getAllLegalMoves(isWhiteTurn, turn.isHuman());
+            if (moveOptions.length == 0 && _model.kingIsInCheck(isWhiteTurn)) break;
 
-            Move move = turn.getNextMove();
-            System.out.println(move);
+            System.out.println((isWhiteTurn ? "White" : "Black") + " to move");
+            long move = turn.getNextMove(moveOptions);
 
-            _model = _model.applyMove(move);
+            _model.applyMove(move);
             _view.setSpots(_model.getLayout(), move);
+
             isWhiteTurn = !isWhiteTurn;
+            _endgame = _model.getIsEndgame();
+            System.out.println(getBoard());
         }
 
         System.out.print("Game Over: ");
@@ -74,16 +85,14 @@ public class Game implements Runnable {
     }
 
     public Board getBoard() {
-        return _model;
-    }
-
-    private void sleep(int milis) {
-        try {
-            Thread.sleep(milis);
-        } catch (InterruptedException ignored) {}
+        return _model.clone();
     }
 
     public long getAIMaxTime() {
         return timeForAI;
+    }
+
+    public boolean isEndgame() {
+        return _endgame;
     }
 }

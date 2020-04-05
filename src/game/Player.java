@@ -1,8 +1,7 @@
 package game;
 
-import moves.Move;
-
 public interface Player {
-    Move getNextMove();
+    long getNextMove(long[] options);
     boolean getIsWhite();
+    boolean isHuman();
 }

@@ -1,6 +1,6 @@
 package game;
 
-import moves.Move;
+import moves.MoveUtils;
 import moves.PawnPromotionChooser;
 
 import javax.swing.*;
@@ -25,22 +25,14 @@ public class JBoard extends JPanel implements ChessSpotListener {
     private boolean promptingUser;
     private boolean[] spotsMovable = new boolean[64];
     private boolean[][] spotsMovableInto = new boolean[64][64];
-    private Move[][] moves = new Move[64][64];
-    private Move userChosenMove;
+    private long[][] moves = new long[64][64];
+    private long userChosenMove = -1;
 
     final private static int SIZE = 80; // Pixel width of each square of the board.
 
     private ImageIcon[] _imageIcons;
     final private static String[] ID_TO_NAME = new String[] {"", "Pawn", "Knight", "Bishop", "Rook", "Queen", "King"};
 
-
-    private PawnPromotionChooser pawnChooser = () -> {
-        String[] options = new String[] {"Queen", "Rook", "Bishop", "Knight"};
-        int response = JOptionPane.showOptionDialog(null, "Choose new Piece", "Pawn Promotion",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
-                null, options, options[0]);
-        return 5 - response;
-    };
 
 
 
@@ -78,10 +70,10 @@ public class JBoard extends JPanel implements ChessSpotListener {
         }
     }
 
-    public void setSpots(byte[] spots, Move move) {
+    public void setSpots(byte[] spots, long move) {
         for (int i = 0; i < spots.length; i++) {
             _spots[i].setPiece(spots[i], _imageIcons[spots[i] + 6]);
-            if (i == move.getStart() || i == move.getEnd()) {
+            if (i == MoveUtils.getStart(move) || i == MoveUtils.getEnd(move)) {
                 _spots[i].makeBackGroundPartOfMove();
             } else {
                 _spots[i].undoBackGroundPartOfMove();
@@ -89,30 +81,25 @@ public class JBoard extends JPanel implements ChessSpotListener {
         }
     }
 
-    public PawnPromotionChooser getPawnChooser() {
-        return pawnChooser;
-    }
-
-    public Move askUserForMove(List<Move> allPossibleChoices) {
+    public long askUserForMove(long[] allPossibleChoices) {
         promptingUser = true;
-        moves = new Move[64][64];
+        moves = new long[64][64];
         spotsMovable = new boolean[64];
         spotsMovableInto = new boolean[64][64];
-        for (Move m : allPossibleChoices) {
-            if (m.isBotPawnPromotion()) continue;
-            spotsMovable[m.getStart()] = true;
-            spotsMovableInto[m.getStart()][m.getEnd()] = true;
-            moves[m.getStart()][m.getEnd()] = m;
+        for (long m : allPossibleChoices) {
+            spotsMovable[MoveUtils.getStart(m)] = true;
+            spotsMovableInto[MoveUtils.getStart(m)][MoveUtils.getEnd(m)] = true;
+            moves[MoveUtils.getStart(m)][MoveUtils.getEnd(m)] = m;
         }
 
         // Wait for user to input a move
-        while (promptingUser && userChosenMove == null) {
+        while (promptingUser && userChosenMove == -1l) {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException ignored) {}
         }
-        Move output = userChosenMove;
-        userChosenMove = null;
+        long output = userChosenMove;
+        userChosenMove = -1l;
         return output;
     }
 

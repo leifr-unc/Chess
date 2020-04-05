@@ -1,28 +1,27 @@
 package game;
 
-import board.Board;
-import evaluation.OldAI;
-import moves.Move;
+import evaluation.AI;
 
 
 public class AIPlayer implements Player {
     private boolean _isWhite;
     private Game _game;
-    private OldAI _generator;
+    private AI _generator;
 
     public AIPlayer(boolean isWhite, Game game) {
         _isWhite = isWhite;
         _game = game;
-        _generator = new OldAI();
+        _generator = new AI();
     }
 
     @Override
-    public Move getNextMove() {
-        return _generator.getBestMove(_game.getBoard(), _isWhite, _game.getAIMaxTime());
+    public long getNextMove(long[] options) {
+        return _generator.getBestMove(_game.getBoard(), _isWhite, _game.getAIMaxTime(), options, _game.isEndgame());
     }
 
     @Override
-    public boolean getIsWhite() {
-        return _isWhite;
-    }
+    public boolean getIsWhite() { return _isWhite; }
+
+    @Override
+    public boolean isHuman() { return false; }
 }

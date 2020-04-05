@@ -1,7 +1,5 @@
 package game;
 
-import moves.Move;
-
 public class HumanPlayer implements Player {
     private boolean _isWhite;
     private Game _game;
@@ -12,12 +10,11 @@ public class HumanPlayer implements Player {
     }
 
     @Override
-    public Move getNextMove() {
-        return _game.askUserForMove(_isWhite);
-    }
+    public long getNextMove(long[] options) { return _game.askUserForMove(options); }
 
     @Override
-    public boolean getIsWhite() {
-        return _isWhite;
-    }
+    public boolean getIsWhite() { return _isWhite; }
+
+    @Override
+    public boolean isHuman() { return true; }
 }

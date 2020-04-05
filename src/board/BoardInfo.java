@@ -1,46 +1,55 @@
 package board;
 
-public class BoardInfo {
+public abstract class BoardInfo {
+    public static final int START_INFO = 0;
 
-    // Castling
-    public boolean whiteKingHasMoved;
-    public boolean whiteCastleA1HasMoved;
-    public boolean whiteCastleH1HasMoved;
+    public static boolean whiteKingHasMoved    (int info) { return ( info     & 1) != 0; }
 
-    public boolean blackKingHasMoved;
-    public boolean blackCaslteA8HasMoved;
-    public boolean blackCastleH8HasMoved;
+    public static boolean whiteCastleA1HasMoved(int info) { return ((info>>1) & 1) != 0; }
 
-    // King positions (keep updated)
-    public byte whiteKingPos = 4;
-    public byte blackKingPos = 60;
+    public static boolean whiteCastleH1HasMoved(int info) { return ((info>>2) & 1) != 0; }
 
-    // Progress (piece capture or pawn move)
-    public byte numMovesSinceProgress = 0;
+    public static boolean blackKingHasMoved    (int info) { return ((info>>3) & 1) != 0; }
 
-    // Double Pawn Moves
-    public boolean lastMoveWasDoublePawnMove;
-    public byte positionOfDoublePawn;
+    public static boolean blackCastleA7HasMoved(int info) { return ((info>>4) & 1) != 0; }
 
-    public BoardInfo clone() {
-        BoardInfo out = new BoardInfo();
+    public static boolean blackCastleH7HasMoved(int info) { return ((info>>5) & 1) != 0; }
 
-        out.whiteKingHasMoved = whiteKingHasMoved;
-        out.whiteCastleA1HasMoved = whiteCastleA1HasMoved;
-        out.whiteCastleH1HasMoved = whiteCastleH1HasMoved;
+    public static byte numMovesSinceProgress (int info) { return (byte) ((info>>6) & 255); }
 
-        out.blackKingHasMoved = blackKingHasMoved;
-        out.blackCaslteA8HasMoved = blackCaslteA8HasMoved;
-        out.blackCastleH8HasMoved = blackCastleH8HasMoved;
+    public static boolean lastMoveWasDoublePawnMove (int info) { return ((info>>14) & 1) != 0; }
 
-        out.whiteKingPos = whiteKingPos;
-        out.blackKingPos = blackKingPos;
+    public static byte positionOfDoublePawn (int info) { return (byte) ((info>>15) &63); }
 
-        out.numMovesSinceProgress = numMovesSinceProgress;
 
-        out.lastMoveWasDoublePawnMove = lastMoveWasDoublePawnMove;
-        out.positionOfDoublePawn = positionOfDoublePawn;
+    public static int setWhiteKingHasMoved (int info, boolean set) { return setBit(info, set, 0); }
 
-        return out;
+    public static int setWhiteCastleA1HasMoved(int info, boolean set) { return setBit(info, set, 1); }
+
+    public static int setWhiteCastleH1HasMoved(int info, boolean set) { return setBit(info, set, 2); }
+
+    public static int setBlackKingHasMoved    (int info, boolean set) { return setBit(info, set, 3); }
+
+    public static int setBlackCastleA7HasMoved(int info, boolean set) { return setBit(info, set, 4); }
+
+    public static int setBlackCastleH7HasMoved(int info, boolean set) { return setBit(info, set, 5); }
+
+    public static int setNumMovesSinceProgress (int info, int set) { return setBits(info, set, 6, 8); }
+
+    public static int setLastMoveWasDoublePawnMove (int info, boolean set) { return setBit(info, set, 14); }
+
+    public static int setPositionOfDoublePawn (int info, int set) { return setBits(info, set, 15, 6); }
+
+    private static int setBit (int info, boolean set, int offset) {
+        if (set) {
+            info |= (1 << offset);
+        } else {
+            info &= ~(1 << offset);
+        }
+        return info;
+    }
+
+    private static int setBits (int info, int set, int offset, int numBits) {
+        return ((info>>>(offset+numBits))<<(offset+numBits)) | (set << offset) | ((info<<(32-offset))>>>(32-offset));
     }
 }

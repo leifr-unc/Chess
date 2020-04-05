@@ -29,6 +29,7 @@ public class ChessWidget extends JPanel {
         topPanel.add(chessWidget, BorderLayout.CENTER);
 
         mainFrame.pack();
+        mainFrame.setResizable(false);
         mainFrame.setVisible(true);
         chessWidget.startGame();
         return mainFrame;
