@@ -1,6 +1,8 @@
-package main.java.game;
+package game;
 
-import main.java.evaluation.AI;
+import evaluation.AI;
+
+import java.util.List;
 
 
 public class AIPlayer implements Player {
@@ -15,7 +17,7 @@ public class AIPlayer implements Player {
     }
 
     @Override
-    public long getNextMove(long[] options) {
+    public long getNextMove(List<Long> options) {
         return _ai.getBestMove(_game.getBoard(), _isWhite, _game.getAIMaxTime(), options, _game.isEndgame());
     }
 

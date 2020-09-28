@@ -1,4 +1,6 @@
-package main.java.game;
+package game;
+
+import java.util.List;
 
 public class HumanPlayer implements Player {
     private boolean _isWhite;
@@ -10,7 +12,7 @@ public class HumanPlayer implements Player {
     }
 
     @Override
-    public long getNextMove(long[] options) { return _game.askUserForMove(options); }
+    public long getNextMove(List<Long> options) { return _game.askUserForMove(options); }
 
     @Override
     public boolean isHuman() { return true; }

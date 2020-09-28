@@ -1,18 +1,12 @@
-package main.java.game;
-
-import main.java.board.Board;
+package game;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
-import java.awt.image.BufferedImage;
-import java.io.*;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.text.html.ImageView;
 
 /*
  * JGridSpot class:
@@ -40,7 +34,7 @@ public class JGridSpot extends JPanel implements MouseListener {
 
     private ArrayList<ChessSpotListener> _listeners = new ArrayList<>();
 
-    public JGridSpot(int position) {
+    JGridSpot(int position) {
         _backGroundColor = (position%2 + (position/8)%2 == 1) ? LIGHT_BG : DARK_BG;
         _moveBackGroundColor = (position%2 + (position/8)%2 == 1) ? PART_OF_MOVE_LIGHT : PART_OF_MOVE_DARK;
         _position = position;
@@ -54,36 +48,28 @@ public class JGridSpot extends JPanel implements MouseListener {
         addMouseListener(this);
     }
 
-    public int getPosition() {
-        return _position;
-    }
-
-    public void highlightSelectable() {
+    void highlightSelectable() {
         _active_highlight = SELECTABLE_COLOR;
         trigger_update();
     }
 
-    public void highlightSelected() {
+    void highlightSelected() {
         setBackground(SELECTED_COLOR);
         trigger_update();
     }
 
-    public void highlightMoveable() {
+    void highlightMoveable() {
         _active_highlight = MOVEABLE_COLOR;
         trigger_update();
     }
 
-    public void unhighlight() {
+    void unhighlight() {
         _active_highlight = null;
         setBackground(_useMoveBackGround ? _moveBackGroundColor : _backGroundColor);
         trigger_update();
     }
 
-    public int getPiece() {
-        return _piece;
-    }
-
-    public void setPiece(int piece, ImageIcon imageIcon) {
+    void setPiece(int piece, ImageIcon imageIcon) {
         if (_piece == piece) return;
 
         _piece = piece;
@@ -119,7 +105,7 @@ public class JGridSpot extends JPanel implements MouseListener {
 
     }
 
-    public void addChessSpotListener(ChessSpotListener c) {
+    void addChessSpotListener(ChessSpotListener c) {
         _listeners.add(c);
     }
 
@@ -127,14 +113,14 @@ public class JGridSpot extends JPanel implements MouseListener {
         _listeners.remove(c);
     }
 
-    public void makeBackGroundPartOfMove() {
+    void makeBackGroundPartOfMove() {
         if (_useMoveBackGround) return;
         setBackground(_moveBackGroundColor);
         _useMoveBackGround = true;
         trigger_update();
     }
 
-    public void undoBackGroundPartOfMove() {
+    void undoBackGroundPartOfMove() {
         if (!_useMoveBackGround) return;
         setBackground(_backGroundColor);
         _useMoveBackGround = false;

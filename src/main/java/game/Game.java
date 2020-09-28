@@ -1,4 +1,4 @@
-package main.java.game;
+package game;
 
 /*
  * Game class:
@@ -8,11 +8,12 @@ package main.java.game;
  * -> The "Controller" in the Model-View-Controller design pattern.
  */
 
-import main.java.board.Board;
-import main.java.evaluation.AI;
-import main.java.moves.MoveUtils;
+import board.Board;
+import evaluation.AI;
+import moves.MoveUtils;
 
 import javax.swing.*;
+import java.util.List;
 import java.util.Stack;
 
 public class Game implements Runnable {
@@ -53,10 +54,10 @@ public class Game implements Runnable {
     private void initializePlayers(boolean whiteIsBot, boolean blackIsBot) {
         _white = whiteIsBot ? new AIPlayer(true, this) : new HumanPlayer(true, this);
         _black = blackIsBot ? new AIPlayer(false, this) : new HumanPlayer(false, this);
-        _white = new AIPlayer(true, this);
+//        _white = new AIPlayer(true, this);
 //        _black = new AIPlayer(false, this);
 //        _white = new HumanPlayer(true, this);
-        _black = new HumanPlayer(false, this);
+//        _black = new HumanPlayer(false, this);
 //        _white = new MonkeyPlayer(true, this);
 //        _black = new MonkeyPlayer(false, this);
     }
@@ -66,7 +67,7 @@ public class Game implements Runnable {
         gameThread.start();
     }
 
-    public long askUserForMove(long[] options) {
+    public long askUserForMove(List<Long> options) {
         return _view.askUserForMove(options);
     }
 
@@ -86,8 +87,8 @@ public class Game implements Runnable {
         }
         while(true) {
             Player turn = (isWhiteTurn ? _white : _black);
-            long[] moveOptions = _model.getAllLegalMoves(isWhiteTurn, turn.isHuman());
-            if (moveOptions.length == 0 && _model.kingIsInCheck(isWhiteTurn)) break;
+            List<Long> moveOptions = _model.getAllLegalMoves(isWhiteTurn, turn.isHuman());
+            if (moveOptions.size() == 0 && _model.kingIsInCheck(isWhiteTurn)) break;
             if (_model.isDraw()) break;
 
             if (_statusLabel != null) {
@@ -126,7 +127,7 @@ public class Game implements Runnable {
             } else if (_model.isCheckMated(false) && !isWhiteTurn) {
                 _statusLabel.setText(" Game Over - White Won!");
             } else {
-                System.out.println(" Draw Game!");
+                _statusLabel.setText(" Draw Game!");
             }
         } catch (NullPointerException e) {
             System.out.print("Game Over: ");

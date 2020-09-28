@@ -1,8 +1,8 @@
-package main.java.board;
+package board;
 
-import main.java.evaluation.BoardEvaluator;
-import main.java.game.Game;
-import main.java.moves.*;
+import evaluation.BoardEvaluator;
+import game.Game;
+import moves.*;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -22,8 +22,8 @@ public class Board {
     private static String[] unicodeChess = new String[] {"\u2654", "\u2655",
             "\u2656", "\u2657", "\u2658", "\u2659", "  ", "\u265F", "\u265E",
             "\u265D", "\u265C", "\u265B", "\u265A"};
-    final static int MOVE_STACK_SIZE = 10000;
-    final static long[] knightAttacks = {
+    private final static int MOVE_STACK_SIZE = 10000;
+    private final static long[] knightAttacks = {
             0x0000000000020400L, 0x0000000000050800L, 0x00000000000A1100L,
             0x0000000000142200L, 0x0000000000284400L, 0x0000000000508800L,
             0x0000000000A01000L, 0x0000000000402000L, 0x0000000002040004L,
@@ -72,13 +72,17 @@ public class Board {
      * ^^ black is negative, white is positive
      */
 
-    // Board state
-    private long _whites;
-    private long _blacks;
-    private long _pawns;
-    private long _bishops;
-    private long _rooks;
-    private long _kings;
+    /* Board state:
+     * -> each long has 64 1s and 0s, allowing a single long to represent a boolean at each spot on the board.
+     * -> _whites are 0 for each non white spot, and 1 for each white spot
+     * -> if a spot is true for _whites, _bishops, and _rooks, and no other bitboard, then it's a white queen.
+     */
+    public long _whites;
+    public long _blacks;
+    public long _pawns;
+    public long _bishops;
+    public long _rooks;
+    public long _kings;
 
     public int  _info;
 
@@ -130,10 +134,10 @@ public class Board {
     }
 
     public boolean isCheckMated(boolean white) {
-        return kingIsInCheck(white) && getAllLegalMoves(white, false).length == 0;
+        return kingIsInCheck(white) && getAllLegalMoves(white, false).size() == 0;
     }
 
-    public long[] getAllLegalMoves(boolean forWhite, boolean forHuman) {
+    public List<Long> getAllLegalMoves(boolean forWhite, boolean forHuman) {
         KingSafety safety = getKingSafety(forWhite);
 
         List<Long> output = new ArrayList<>();
@@ -143,59 +147,47 @@ public class Board {
             // If there isn't a piece of the correct color at i, continue:
             if ((forWhite && !white(i)) || (!forWhite && !black(i))) continue;
 
-            // Now, we know that the piece at i is the right color.
-            long movesFromI = 0;
-
             // Determine the piece, and calculate its moves accordingly.
             if (king(i)) {
                 // King
-                movesFromI |= safety.kingMoveOptions;
+                output.addAll(bitMovesToMoves(i, safety.kingMoveOptions, 0));
 
                 // Castling
                 if (forWhite && !BoardInfo.whiteKingHasMoved(_info) && !BoardInfo.whiteCastleA1HasMoved(_info) && white(0) &&
                         empty(1) && empty(2) && empty(3) && !safety.kingInCheck && !positionIsInCheck(2, true)) {
-                    movesFromI = setBit(movesFromI, true, 2);
+                    output.add(MoveUtils.generateMove(i, 2, this, 0));
                 }
                 if (forWhite && !BoardInfo.whiteKingHasMoved(_info) && !BoardInfo.whiteCastleH1HasMoved(_info) && white(7) &&
                         empty(6) && empty(5) && !safety.kingInCheck && !positionIsInCheck(6, true)) {
-                    movesFromI = setBit(movesFromI, true, 6);
-                }
+                    output.add(MoveUtils.generateMove(i, 6, this, 0));                }
                 if (!forWhite && !BoardInfo.blackKingHasMoved(_info) && !BoardInfo.blackCastleA7HasMoved(_info) && black(56) &&
                         empty(57) && empty(58) && empty(59) && !safety.kingInCheck && !positionIsInCheck(58, false)) {
-                    movesFromI = setBit(movesFromI, true, 58);
-                }
+                    output.add(MoveUtils.generateMove(i, 58, this, 0));                }
                 if (!forWhite && !BoardInfo.blackKingHasMoved(_info) && !BoardInfo.blackCastleH7HasMoved(_info) && black(63) &&
                         empty(62) && empty(61) && !safety.kingInCheck && !positionIsInCheck(62, false)) {
-                    movesFromI = setBit(movesFromI, true, 62);
-                }
+                    output.add(MoveUtils.generateMove(i, 62, this, 0));                }
 
             } else if (!safety.kingDoubleCheck) {
                 if (bishop(i) && rook(i)) {
                     // Queen
-                    movesFromI |= getBitLineMoves(i, true, true, false, forWhite, 7, safety);
+                    output.addAll(getLineMoves(i, true, true, false, forWhite, 7, safety));
                 } else if (rook(i)) {
                     // Rook
-                    movesFromI |= getBitLineMoves(i, true, false, false, forWhite, 7, safety);
+                    output.addAll(getLineMoves(i, true, false, false, forWhite, 7, safety));
                 } else if (bishop(i)) {
                     // Bishop
-                    movesFromI |= getBitLineMoves(i, false, true, false, forWhite, 7, safety);
+                    output.addAll(getLineMoves(i, false, true, false, forWhite, 7, safety));
                 } else if (pawn(i)) {
                     // Pawn
                     output.addAll(getPawnMoves(i, safety, forHuman));
                 } else {
                     // Knight
-                    movesFromI |= getBitLineMoves(i, false, false, true, forWhite, 1, safety);
+                    output.addAll(getLineMoves(i, false, false, true, forWhite, 1, safety));
                 }
             }
-
-            output.addAll(bitMovesToMoves(i, movesFromI, 0));
         }
 
-        long[] outputArray = new long[output.size()];
-        for (int i = 0; i < outputArray.length; i++) {
-            outputArray[i] = output.get(i);
-        }
-        return outputArray;
+        return output;
     }
 
     public boolean kingIsInCheck(boolean whiteKing) {
@@ -395,6 +387,7 @@ public class Board {
         return moves;
     }
 
+
     private List<Long> getMoveAndPromotion(int from, int to, boolean isPromotion, boolean forHuman) {
         List<Long> moves = new ArrayList<>();
 
@@ -439,10 +432,10 @@ public class Board {
      * @param maxDist the max distance of the traversal. Should be 7 for rooks, bishops, queens, 1 for kings and knights.
      * @return a bitBoard representing each square as 1 if the piece at startPos can move into it, and 0 if not.
      */
-    private long getBitLineMoves(int startPos, boolean rook, boolean bishop, boolean knight, boolean forWhite, int maxDist, KingSafety safety) {
-        long output = 0;
+    private List<Long> getLineMoves(int startPos, boolean rook, boolean bishop, boolean knight, boolean forWhite, int maxDist, KingSafety safety) {
+        List<Long> output = new ArrayList<>();
         if (safety.kingInCheck && safety.kingDoubleCheck && !king(startPos)) {
-            return 0;
+            return output;
         }
 
         // Rook moves
@@ -450,7 +443,7 @@ public class Board {
             for (int i = 0; i < 4; i++) {
                 int dx = (i == 1) ? 1 : (i == 3) ? -1 : 0;
                 int dy = (i == 2) ? 1 : (i == 0) ? -1 : 0;
-                output = output | getBitMovesInDirection(startPos, forWhite, dx, dy, maxDist, safety);
+                output.addAll(getMovesInDirection(startPos, forWhite, dx, dy, maxDist, safety));
             }
         }
 
@@ -459,7 +452,7 @@ public class Board {
             for (int i = 0; i < 4; i++) {
                 int dx = (i < 2) ? 1 : -1;
                 int dy = (i == 1 || i == 2) ? 1 : -1;
-                output = output | getBitMovesInDirection(startPos, forWhite, dx, dy, maxDist, safety);
+                output.addAll(getMovesInDirection(startPos, forWhite, dx, dy, maxDist, safety));
             }
         }
 
@@ -468,7 +461,7 @@ public class Board {
             for (byte i = 0; i < 8; i++) {
                 int dx = (i == 0 || i == 3) ? 1 : (i == 4 || i == 7) ? -1 : (i == 1 || i == 2) ? 2 : -2;
                 int dy = (i == 0 || i == 7) ? -2 : (i == 1 || i == 6) ? -1 : (i == 2 || i == 5) ? 1 : 2;
-                output = output | getBitMovesInDirection(startPos, forWhite, dx, dy, maxDist, safety);
+                output.addAll(getMovesInDirection(startPos, forWhite, dx, dy, maxDist, safety));
             }
         }
 
@@ -483,8 +476,8 @@ public class Board {
      * @param maxDist the max distance to be traversed.  Use 7 or more for everything, and 1 for knights and kings.
      * @return a bit board of all spots that the piece in startPos could move into along the direction specified
      */
-    private long getBitMovesInDirection(int startPos, boolean forWhite, int dx, int dy, int maxDist, KingSafety safety) {
-        long output = 0;
+    private List<Long> getMovesInDirection(int startPos, boolean forWhite, int dx, int dy, int maxDist, KingSafety safety) {
+        List<Long> output = new ArrayList<>();
         int x = startPos%8;
         int y = startPos/8;
 
@@ -502,14 +495,14 @@ public class Board {
             // If the spot is empty, add to output and continue.
             if (empty(currentPos)) {
                 if (!(safety.kingInCheck && ((safety.blockCheckSpots>>currentPos) & 1L) == 0)) {
-                    output = setBit(output, true, currentPos);
+                    output.add(MoveUtils.generateMove(startPos, currentPos, this, 0));
                 }
                 continue;
             }
 
             // If the spot is of the other color, add to output.
             if (white(currentPos) != forWhite && !empty(currentPos) && !(safety.kingInCheck && ((safety.blockCheckSpots>>currentPos) & 1L) == 0)) {
-                output = setBit(output, true, currentPos);
+                output.add(MoveUtils.generateMove(startPos, currentPos, this, 0));
             }
 
             // Quit, since this position wasn't empty.

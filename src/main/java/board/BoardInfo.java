@@ -1,4 +1,4 @@
-package main.java.board;
+package board;
 
 public abstract class BoardInfo {
     public static final int START_INFO = 0;

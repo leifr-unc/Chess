@@ -1,6 +1,6 @@
-package main.java.evaluation;
+package evaluation;
 
-import main.java.board.Board;
+import board.Board;
 
 import java.io.File;
 import java.io.FileNotFoundException;

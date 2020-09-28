@@ -1,6 +1,6 @@
-package main.java.game;
+package game;
 
-import main.java.moves.*;
+import moves.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,8 +22,6 @@ public class JBoard extends JPanel implements ChessSpotListener {
     private JGridSpot[] _spots;
     private int _selected;
 
-    private boolean _whiteIsBottom;
-
     private boolean promptingUser;
     private boolean[] spotsMovable = new boolean[64];
     private boolean[][] spotsMovableInto = new boolean[64][64];
@@ -41,7 +39,6 @@ public class JBoard extends JPanel implements ChessSpotListener {
 
 
     public JBoard(boolean whiteIsBottom) {
-        _whiteIsBottom = whiteIsBottom;
 
         _selected = -1;
 
@@ -85,7 +82,7 @@ public class JBoard extends JPanel implements ChessSpotListener {
         }
     }
 
-    public long askUserForMove(long[] allPossibleChoices) {
+    public long askUserForMove(List<Long> allPossibleChoices) {
         promptingUser = true;
         moves = new long[64][64];
         spotsMovable = new boolean[64];

@@ -1,4 +1,4 @@
-package main.java.game;
+package game;
 
 import javax.swing.*;
 import javax.swing.border.Border;

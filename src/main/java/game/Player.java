@@ -1,6 +1,8 @@
-package main.java.game;
+package game;
+
+import java.util.List;
 
 public interface Player {
-    long getNextMove(long[] options);
+    long getNextMove(List<Long> options);
     boolean isHuman();
 }

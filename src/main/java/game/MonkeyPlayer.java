@@ -1,22 +1,25 @@
-package main.java.game;
+package game;
+
+import java.util.List;
 
 public class MonkeyPlayer implements Player {
-    boolean _white;
-    Game _game;
+    private boolean _white;
+    private Game _game;
 
     public MonkeyPlayer(boolean isWhite, Game game) {
         _white = isWhite;
         _game = game;
     }
+
     @Override
-    public long getNextMove(long[] options) {
-        long[] out = _game.getBoard().getAllLegalMoves(_white, false);
+    public long getNextMove(List<Long> options) {
+        List<Long> out = _game.getBoard().getAllLegalMoves(_white, false);
         try {
             Thread.sleep(_game.getAIMaxTime());
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        return out[((int) (Math.random()*out.length))];
+        return out.get((int) (Math.random()*out.size()));
     }
 
     @Override

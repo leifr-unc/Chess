@@ -1,11 +1,9 @@
-package main.java.moves;
+package moves;
 
-import main.java.board.Board;
-import main.java.board.BoardInfo;
-import main.java.game.JBoard;
+import board.Board;
+import board.BoardInfo;
 
 import javax.swing.*;
-import java.util.Scanner;
 
 /*
  * Contains tools for working with moves stored as longs.
@@ -26,19 +24,12 @@ import java.util.Scanner;
  * -> 4 remaining bits are never used.
  */
 public abstract class MoveUtils {
-    public static PawnPromotionChooser pawnChooser = () -> {
-        String[] options = new String[] {"Queen", "Rook", "Bishop", "Knight"};
-        int response = JOptionPane.showOptionDialog(null, "Choose new Piece", "Pawn Promotion",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
-                null, options, options[0]);
-        return 5 - response;
-    };
 
     public static long applyMove(Board board, long move) {
-        int from = (int) ((move) & ((1l<<6) - 1));
-        int to = (int) ((move>>>6) & ((1l<<6) - 1));
-        int from1 = (int) ((move>>>15) & ((1l<<6) - 1));
-        int to1 = (int) ((move>>>21) & ((1l<<6) - 1));
+        int from = (int) ((move) & ((1L<<6) - 1));
+        int to = (int) ((move>>>6) & ((1L<<6) - 1));
+        int from1 = (int) ((move>>>15) & ((1L<<6) - 1));
+        int to1 = (int) ((move>>>21) & ((1L<<6) - 1));
 
         // Make the move
 
@@ -52,7 +43,7 @@ public abstract class MoveUtils {
         int multChoiceBy = board.white(from) ? 1 : -1; // For getting the correct color piece.
 
         if (isUserPawnPromotion(move)) {
-            board.setPiece(to, (multChoiceBy * (pawnChooser.getChoice())));
+            board.setPiece(to, (multChoiceBy * (askUserForPawnChoice())));
         } else if (isBotPawnPromotion(move)){
             // Is bishop?
             if (((move>>33) & 1) != 0) {
@@ -101,12 +92,12 @@ public abstract class MoveUtils {
     }
 
     public static void undoMove(Board board, long move) {
-        int from = (int) ((move) & ((1l<<6) - 1));
-        int to = (int) ((move>>>6) & ((1l<<6) - 1));
-        int from1 = (int) ((move>>>15) & ((1l<<6) - 1));
-        int to1 = (int) ((move>>>21) & ((1l<<6) - 1));
-        int savedTo = (int) ((move>>>12) & ((1l<<3) - 1));
-        int savedTo1 = (int) ((move>>>27) & ((1l<<3) - 1));
+        int from = (int) ((move) & ((1L <<6) - 1));
+        int to = (int) ((move>>>6) & ((1L<<6) - 1));
+        int from1 = (int) ((move>>>15) & ((1L<<6) - 1));
+        int to1 = (int) ((move>>>21) & ((1L<<6) - 1));
+        int savedTo = (int) ((move>>>12) & ((1L<<3) - 1));
+        int savedTo1 = (int) ((move>>>27) & ((1L<<3) - 1));
         boolean isWhite = board.white(to);
 
         if (isPawnPromotion(move)) {
@@ -214,23 +205,23 @@ public abstract class MoveUtils {
     }
 
     public static int getStart(long move) {
-        return (int) ((move) & ((1l<<6) - 1));
+        return (int) ((move) & ((1L<<6) - 1));
     }
 
     public static int getEnd(long move) {
-        return (int) ((move>>>6) & ((1l<<6) - 1));
+        return (int) ((move>>>6) & ((1L<<6) - 1));
     }
 
     public static boolean isUserPawnPromotion(long move) {
-        return ((move>>31) & 1l) != 0 && ((move>>32) & 1l) != 0;
+        return ((move>>31) & 1L) != 0 && ((move>>32) & 1L) != 0;
     }
 
-    public static boolean isBotPawnPromotion(long move) {
-        return ((move>>31) & 1l) != 0 && ((move>>32) & 1l) == 0;
+    private static boolean isBotPawnPromotion(long move) {
+        return ((move>>31) & 1L) != 0 && ((move>>32) & 1L) == 0;
     }
 
     public static boolean isPawnPromotion(long move) {
-        return (move>>31 & 1l) != 0;
+        return (move>>31 & 1L) != 0;
     }
 
     public static boolean equal(long move1, long move2) {
@@ -243,9 +234,9 @@ public abstract class MoveUtils {
 
     private static long setBit (long bits, boolean set, int offset) {
         if (set) {
-            bits |= (1l << offset);
+            bits |= (1L << offset);
         } else {
-            bits &= ~(1l << offset);
+            bits &= ~(1L << offset);
         }
         return bits;
     }
@@ -254,11 +245,11 @@ public abstract class MoveUtils {
         return ((bits>>>(offset+numBits))<<(offset+numBits)) | (set << offset) | ((bits<<(32-offset))>>>(32-offset));
     }
 
-    private static String bitString(long bits) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 63; i >= 0; i--) {
-            sb.append((bits>>i) & 1);
-        }
-        return sb.toString();
+    private static int askUserForPawnChoice() {
+        String[] options = new String[] {"Queen", "Rook", "Bishop", "Knight"};
+        int response = JOptionPane.showOptionDialog(null, "Choose new Piece", "Pawn Promotion",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
+                null, options, options[0]);
+        return 5 - response;
     }
 }
